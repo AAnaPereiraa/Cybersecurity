@@ -8,7 +8,11 @@ SUPPORTED_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".bmp")
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="images")
-    parser.add_argument("files", nargs="+", help="Image files to inspect")
+    parser.add_argument(
+        "files", 
+        nargs="+", 
+        help="Image files to inspect"
+    )
 
     args = parser.parse_args()
 
