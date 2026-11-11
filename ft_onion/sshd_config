@@ -1,0 +1,13 @@
+Port 4242
+AddressFamily any
+
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+X11Forwarding no
+AllowTcpForwarding no
+PermitTunnel no
+
+Subsystem sftp /usr/lib/openssh/sftp-server
