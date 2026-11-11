@@ -6,6 +6,7 @@ from pathlib import Path
 from cryptography.fernet import Fernet
 import hashlib
 import hmac
+import string
 import time
 
 ENCRYPTION_KEY_PATH = Path.home() / ".config" / "ft_otp" / "encryption.key"
@@ -32,21 +33,38 @@ def Parsingargs():
     return args
 
 
+def is_valid_hex(key):
+    if len(key) >= 64:
+        for char in key:
+            if char in string.hexdigits:
+                continue
+            else:
+                print("Not hexadecimal key")
+                return False
+    else:
+        print("key must contain at least 64 hexadecimal characters")
+        return False
+    return True
+
+
 def key_process(filename):
 
     if not os.path.isfile(filename):
         print("File does not exist")
         raise ValueError()
     
-    with open(filename, "r", encoding="utf-8") as file:
-        content = file.read().strip()
-
-    if len(content) < 64:
-        print("key must be at least 64 hexadecimal characters")
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            content = file.read().strip()
+    
+    except (PermissionError):
+        print(f"Permission denied: {filename}")
         raise ValueError()
 
-    else:
-        Savekey(filename)
+    if not is_valid_hex(content):
+        raise ValueError()
+
+    Savekey(filename)
 
     return 
 
@@ -58,8 +76,8 @@ def Savekey(hexkey):
 
     encryption_key = Fernet.generate_key()
     cipher = Fernet(encryption_key)
-
-    encrypted_key = cipher.encrypt(key.encode("utf-8"))
+    key = bytes.fromhex(key)
+    encrypted_key = cipher.encrypt(key)
 
     with open("ft_otp.key", "wb") as file:
         file.write(encrypted_key)
@@ -74,38 +92,40 @@ def Savekey(hexkey):
     return
 
 
-def gen_pass():
+def gen_pass(filename):
 
-    hex_key = decrypt_key()
-    key = bytes.fromhex(hex_key)
+    if not os.path.isfile(filename):
+        print("File does not exist")
+        raise ValueError()
+
+    key = decrypt_key(filename)
     counter = int(time.time()) // 30
     counter_bytes = counter.to_bytes(8, byteorder="big")
-
     digest = hmac.new(
         key,
         counter_bytes,
         hashlib.sha1
     ).digest()
-
     offset = digest[-1] & 0x0F
     number = int.from_bytes(
         digest[offset:offset + 4],
         byteorder="big"
     ) & 0x7FFFFFFF
-
     print(f"{number % 1_000_000:06d}")
+    
     return 
 
 
-def decrypt_key():
+def decrypt_key(filename):
     with open(ENCRYPTION_KEY_PATH, "rb") as file:
         encryption_key = file.read()
 
-    with open("ft_otp.key", "rb") as file:
+    with open(filename, "rb") as file:
         encrypted_key = file.read()
 
     cipher = Fernet(encryption_key)
-    hex_key = cipher.decrypt(encrypted_key).decode("utf-8")
+    hex_key = cipher.decrypt(encrypted_key)
+    
     return hex_key
 
 
@@ -115,7 +135,8 @@ def main():
         if (args.key_file):
             key_process(args.key_file)
         elif (args.gen_pass):
-            gen_pass()
+            gen_pass(args.gen_pass)
+    
     except(ValueError):
         return
 
