@@ -3,7 +3,7 @@
 import argparse
 import os
 from pathlib import Path
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 import hashlib
 import hmac
 import string
@@ -34,7 +34,7 @@ def Parsingargs():
 
 
 def is_valid_hex(key):
-    if len(key) >= 64:
+    if len(key) >= 64 and len(key) % 2 == 0:
         for char in key:
             if char in string.hexdigits:
                 continue
@@ -42,7 +42,7 @@ def is_valid_hex(key):
                 print("Not hexadecimal key")
                 return False
     else:
-        print("key must contain at least 64 hexadecimal characters")
+        print("key must contain at least 64 hexadecimal characters with an even length")
         return False
     return True
 
@@ -55,7 +55,7 @@ def key_process(filename):
     
     try:
         with open(filename, "r", encoding="utf-8") as file:
-            content = file.read().strip()
+            content = file.read()
     
     except (PermissionError):
         print(f"Permission denied: {filename}")
@@ -72,7 +72,7 @@ def key_process(filename):
 def Savekey(hexkey):
 
     with open(hexkey, "r", encoding="utf-8") as file:
-            key = file.read().strip()
+            key = file.read()
 
     encryption_key = Fernet.generate_key()
     cipher = Fernet(encryption_key)
@@ -117,14 +117,24 @@ def gen_pass(filename):
 
 
 def decrypt_key(filename):
-    with open(ENCRYPTION_KEY_PATH, "rb") as file:
-        encryption_key = file.read()
 
-    with open(filename, "rb") as file:
-        encrypted_key = file.read()
+    try:
+        with open(ENCRYPTION_KEY_PATH, "rb") as file:
+            encryption_key = file.read()
+    except (FileNotFoundError, PermissionError):
+        print("Not possible to open or locate file")
+        raise ValueError()
 
-    cipher = Fernet(encryption_key)
-    hex_key = cipher.decrypt(encrypted_key)
+    try:
+        with open(filename, "rb") as file:
+            encrypted_key = file.read()
+
+        cipher = Fernet(encryption_key)
+        hex_key = cipher.decrypt(encrypted_key)
+
+    except InvalidToken:
+        print("Invalid or corrupted key file")
+        raise ValueError()
     
     return hex_key
 
@@ -138,10 +148,10 @@ def main():
             gen_pass(args.gen_pass)
     
     except(ValueError):
-        return
+        return 1
 
-    return
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+   raise SystemExit(main())
