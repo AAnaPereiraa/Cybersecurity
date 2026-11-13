@@ -3,6 +3,7 @@ AddressFamily any
 
 PermitRootLogin no
 PubkeyAuthentication yes
+AuthorizedKeysFile /var/lib/tor/.ssh/authorized_keys
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 UsePAM yes

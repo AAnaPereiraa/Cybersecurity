@@ -1,10 +1,12 @@
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y nginx openssh-server tor \
+    && apt-get install --no-install-recommends -y nginx openssh-server tor sudo\
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd /var/www/html /var/lib/tor/ft_onion \
-    && chown -R debian-tor:debian-tor /var/lib/tor/ft_onion
+    && chown -R debian-tor:debian-tor /var/lib/tor/ft_onion \
+    && usermod --shell /bin/sh debian-tor \
+    && usermod -aG sudo debian-tor
 
 COPY index.html /var/www/html/index.html
 COPY nginx.conf /etc/nginx/nginx.conf

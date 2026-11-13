@@ -4,6 +4,12 @@ set -eu
 ssh-keygen -A
 mkdir -p /run/sshd
 
+if [ -r /run/ft_onion_authorized_key ]; then
+    install -d -m 700 -o debian-tor -g debian-tor /var/lib/tor/.ssh
+    install -m 600 -o debian-tor -g debian-tor \
+        /run/ft_onion_authorized_key /var/lib/tor/.ssh/authorized_keys
+fi
+
 nginx -t
 /usr/sbin/sshd -t
 su -s /bin/sh debian-tor -c "tor --verify-config -f /etc/tor/torrc"
